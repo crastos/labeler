@@ -46,6 +46,7 @@ function run() {
             const token = core.getInput("repo-token", { required: true });
             const configPath = core.getInput("configuration-path", { required: true });
             const syncLabels = !!core.getInput("sync-labels", { required: false });
+            const truncate = Number(core.getInput("truncate", { required: false })) || 100;
             const prNumber = getPrNumber();
             if (!prNumber) {
                 console.log("Could not get pull request number from context, exiting");
@@ -71,12 +72,14 @@ function run() {
                     labelsToRemove.push(label);
                 }
             }
-            const truncate = 100 - (syncLabels ? 0 : labelsToRemove.length);
+            const truncatedLabels = labels.slice(0, truncate - (syncLabels ? 0 : labelsToRemove.length));
             if (syncLabels && labelsToRemove.length) {
+                core.debug(`removing ${labelsToRemove.length} labels`);
                 yield removeLabels(client, prNumber, labelsToRemove);
             }
             if (labels.length > 0) {
-                yield addLabels(client, prNumber, labels.slice(0, truncate));
+                core.debug(`adding ${truncatedLabels.length} labels`);
+                yield addLabels(client, prNumber, truncatedLabels);
             }
         }
         catch (error) {
