@@ -49,12 +49,14 @@ export async function run() {
       }
     }
 
-    if (labels.length > 0) {
-      await addLabels(client, prNumber, labels);
-    }
+    const truncate: number = 100 - (syncLabels ? 0 : labelsToRemove.length);
 
     if (syncLabels && labelsToRemove.length) {
       await removeLabels(client, prNumber, labelsToRemove);
+    }
+
+    if (labels.length > 0) {
+      await addLabels(client, prNumber, labels.slice(0, truncate));
     }
   } catch (error) {
     core.error(error);
