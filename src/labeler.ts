@@ -56,10 +56,12 @@ export async function run() {
     );
 
     core.info(`there are currently ${currentLabels.length} labels total`);
+    core.debug(`- ${currentLabels.join("\n - ")}`);
     if (unmanagedLabels.length) {
       core.info(
         `and ${unmanagedLabels.length} labels unmanaged by this action`
       );
+      core.debug(`- ${unmanagedLabels.join("\n - ")}`);
     }
     core.info(`truncating will occur after ${truncate} labels`);
 
@@ -89,15 +91,20 @@ export async function run() {
       }
     }
 
+    if (!(syncLabels && labelsToRemove.length) && !labels.length) {
+      core.info("Nothing to do.");
+      return;
+    }
+
     if (syncLabels && labelsToRemove.length) {
-      core.info(
-        `removing ${labelsToRemove.length} labels: ${labelsToRemove.join(", ")}`
-      );
+      core.info(`removing ${labelsToRemove.length} labels`);
+      core.debug(`- ${labelsToRemove.join("- ")}`);
       await removeLabels(client, prNumber, labelsToRemove);
     }
 
     if (labels.length > 0) {
-      core.info(`adding ${labels.length} labels: ${labels.join(", ")}`);
+      core.info(`adding ${labels.length} labels`);
+      core.debug(`- ${labels.join("- ")}`);
       await addLabels(client, prNumber, labels);
     }
   } catch (error) {

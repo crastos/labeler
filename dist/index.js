@@ -70,8 +70,10 @@ function run() {
             const currentLabels = pullRequest.labels.map(({ name }) => name);
             const unmanagedLabels = currentLabels.filter((label) => !labelGlobs.has(label));
             core.info(`there are currently ${currentLabels.length} labels total`);
+            core.debug(`- ${currentLabels.join("\n - ")}`);
             if (unmanagedLabels.length) {
                 core.info(`and ${unmanagedLabels.length} labels unmanaged by this action`);
+                core.debug(`- ${unmanagedLabels.join("\n - ")}`);
             }
             core.info(`truncating will occur after ${truncate} labels`);
             for (const [label, globs] of labelGlobs.entries()) {
@@ -92,12 +94,18 @@ function run() {
                     throw Error(`Cannot add more than ${truncate} labels to #${prNumber}. Enable sync-labels or manually remove ${total - truncate} labels.`);
                 }
             }
+            if (!(syncLabels && labelsToRemove.length) && !labels.length) {
+                core.info("Nothing to do.");
+                return;
+            }
             if (syncLabels && labelsToRemove.length) {
-                core.info(`removing ${labelsToRemove.length} labels: ${labelsToRemove.join(", ")}`);
+                core.info(`removing ${labelsToRemove.length} labels`);
+                core.debug(`- ${labelsToRemove.join("- ")}`);
                 yield removeLabels(client, prNumber, labelsToRemove);
             }
             if (labels.length > 0) {
-                core.info(`adding ${labels.length} labels: ${labels.join(", ")}`);
+                core.info(`adding ${labels.length} labels`);
+                core.debug(`- ${labels.join("- ")}`);
                 yield addLabels(client, prNumber, labels);
             }
         }
