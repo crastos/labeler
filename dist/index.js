@@ -69,10 +69,11 @@ function run() {
             const labelsToRemove = [];
             const currentLabels = pullRequest.labels.map(({ name }) => name);
             const unmanagedLabels = currentLabels.filter((label) => !labelGlobs.has(label));
-            core.info(`currently ${currentLabels.length} labels total: ${currentLabels.join(", ")}`);
+            core.info(`there are currently ${currentLabels.length} labels total`);
             if (unmanagedLabels.length) {
-                core.info(`and ${unmanagedLabels.length} labels unmanaged by this action: ${unmanagedLabels.join(", ")}`);
+                core.info(`and ${unmanagedLabels.length} labels unmanaged by this action`);
             }
+            core.info(`truncating will occur after ${truncate} labels`);
             for (const [label, globs] of labelGlobs.entries()) {
                 core.debug(`processing ${label}`);
                 if (checkGlobs(changedFiles, globs) &&

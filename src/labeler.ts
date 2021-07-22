@@ -55,18 +55,13 @@ export async function run() {
       (label) => !labelGlobs.has(label)
     );
 
-    core.info(
-      `currently ${currentLabels.length} labels total: ${currentLabels.join(
-        ", "
-      )}`
-    );
+    core.info(`there are currently ${currentLabels.length} labels total`);
     if (unmanagedLabels.length) {
       core.info(
-        `and ${
-          unmanagedLabels.length
-        } labels unmanaged by this action: ${unmanagedLabels.join(", ")}`
+        `and ${unmanagedLabels.length} labels unmanaged by this action`
       );
     }
+    core.info(`truncating will occur after ${truncate} labels`);
 
     for (const [label, globs] of labelGlobs.entries()) {
       core.debug(`processing ${label}`);
