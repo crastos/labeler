@@ -43,14 +43,18 @@ const minimatch_1 = __nccwpck_require__(3973);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            const hardLimit = 100;
             const token = core.getInput("repo-token", { required: true });
             const configPath = core.getInput("configuration-path", { required: true });
             const syncLabels = !!core.getInput("sync-labels", { required: false });
-            const truncate = Number(core.getInput("truncate", { required: false })) || 100;
+            const truncate = Math.min(Number(core.getInput("truncate", { required: false })), hardLimit);
             const prNumber = getPrNumber();
             if (!prNumber) {
                 console.log("Could not get pull request number from context, exiting");
                 return;
+            }
+            if (truncate <= 0) {
+                throw Error("Truncate value must be a positive integer.");
             }
             const client = github.getOctokit(token);
             const { data: pullRequest } = yield client.rest.pulls.get({
@@ -63,23 +67,31 @@ function run() {
             const labelGlobs = yield getLabelGlobs(client, configPath);
             const labels = [];
             const labelsToRemove = [];
+            const currentLabels = pullRequest.labels.map(({ name }) => name);
+            const unmanagedLabels = currentLabels.filter((label) => !labelGlobs.has(label));
             for (const [label, globs] of labelGlobs.entries()) {
                 core.debug(`processing ${label}`);
-                if (checkGlobs(changedFiles, globs)) {
+                if (checkGlobs(changedFiles, globs) &&
+                    labels.length + unmanagedLabels.length <= truncate) {
                     labels.push(label);
                 }
-                else if (pullRequest.labels.find((l) => l.name === label)) {
+                else if (currentLabels.includes(label)) {
                     labelsToRemove.push(label);
                 }
             }
-            const truncatedLabels = labels.slice(0, truncate - (syncLabels ? 0 : labelsToRemove.length));
+            if (!syncLabels) {
+                const total = labels.length + unmanagedLabels.length + labelsToRemove.length;
+                if (total > truncate) {
+                    throw Error(`Cannot add more than ${truncate} labels to #${prNumber}. Enable sync-labels or manually remove ${total - truncate} labels.`);
+                }
+            }
             if (syncLabels && labelsToRemove.length) {
                 core.debug(`removing ${labelsToRemove.length} labels`);
                 yield removeLabels(client, prNumber, labelsToRemove);
             }
             if (labels.length > 0) {
-                core.debug(`adding ${truncatedLabels.length} labels`);
-                yield addLabels(client, prNumber, truncatedLabels);
+                core.debug(`adding ${labels.length} labels`);
+                yield addLabels(client, prNumber, labels);
             }
         }
         catch (error) {

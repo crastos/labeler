@@ -13,7 +13,7 @@ inputs:
     default: false
     required: false
   truncate:
-    description: 'Truncate any labels greater than this amount'
+    description: 'Truncate any labels greater than this amount. This value is clamped at 100, the hard limit imposed by GitHub.'
     default: 100
     required: false
 
