@@ -77,9 +77,10 @@ function run() {
             for (const [label, globs] of labelGlobs.entries()) {
                 core.debug(`processing ${label}`);
                 if (checkGlobs(changedFiles, globs) &&
-                    !currentLabels.includes(label) &&
                     labels.length + unmanagedLabels.length <= truncate) {
-                    labels.push(label);
+                    if (!currentLabels.includes(label)) {
+                        labels.push(label);
+                    }
                 }
                 else if (currentLabels.includes(label)) {
                     labelsToRemove.push(label);
