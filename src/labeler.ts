@@ -17,19 +17,20 @@ export async function run() {
     const token = core.getInput("repo-token", { required: true });
     const configPath = core.getInput("configuration-path", { required: true });
     const syncLabels = !!core.getInput("sync-labels", { required: false });
+
     const truncate = Math.min(
       Number(core.getInput("truncate", { required: false })),
       hardLimit
     );
 
-    const prNumber = getPrNumber();
-    if (!prNumber) {
-      console.log("Could not get pull request number from context, exiting");
-      return;
-    }
-
     if (truncate <= 0) {
       throw Error("Truncate value must be a positive integer.");
+    }
+
+    const prNumber = getPrNumber();
+    if (!prNumber) {
+      core.info("Could not get pull request number from context, exiting");
+      return;
     }
 
     const client: ClientType = github.getOctokit(token);
@@ -52,6 +53,14 @@ export async function run() {
     const currentLabels = <string[]>pullRequest.labels.map(({ name }) => name);
     const unmanagedLabels: string[] = currentLabels.filter(
       (label) => !labelGlobs.has(label)
+    );
+
+    core.info(
+      `currently ${currentLabels.length} labels total (${currentLabels.join(
+        ", "
+      )}), and ${
+        unmanagedLabels.length
+      } not managed by this action (${currentLabels.join(", ")})`
     );
 
     for (const [label, globs] of labelGlobs.entries()) {
@@ -79,12 +88,14 @@ export async function run() {
     }
 
     if (syncLabels && labelsToRemove.length) {
-      core.debug(`removing ${labelsToRemove.length} labels`);
+      core.info(
+        `removing ${labelsToRemove.length} labels: ${labelsToRemove.join(", ")}`
+      );
       await removeLabels(client, prNumber, labelsToRemove);
     }
 
     if (labels.length > 0) {
-      core.debug(`adding ${labels.length} labels`);
+      core.info(`adding ${labels.length} labels: ${labels.join(", ")}`);
       await addLabels(client, prNumber, labels);
     }
   } catch (error) {
