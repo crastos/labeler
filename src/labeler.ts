@@ -56,17 +56,23 @@ export async function run() {
     );
 
     core.info(
-      `currently ${currentLabels.length} labels total (${currentLabels.join(
+      `currently ${currentLabels.length} labels total: ${currentLabels.join(
         ", "
-      )}), and ${
-        unmanagedLabels.length
-      } not managed by this action (${currentLabels.join(", ")})`
+      )}`
     );
+    if (unmanagedLabels.length) {
+      core.info(
+        `and ${
+          unmanagedLabels.length
+        } labels unmanaged by this action: ${unmanagedLabels.join(", ")}`
+      );
+    }
 
     for (const [label, globs] of labelGlobs.entries()) {
       core.debug(`processing ${label}`);
       if (
         checkGlobs(changedFiles, globs) &&
+        !currentLabels.includes(label) &&
         labels.length + unmanagedLabels.length <= truncate
       ) {
         labels.push(label);
